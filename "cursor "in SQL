@@ -1,0 +1,34 @@
+--https://velog.io/@hausectka/pgsql-cursor%EB%A5%BC-%EC%82%AC%EC%9A%A9%ED%95%98%EC%97%AC-%EA%B0%99%EC%9D%80-row%EC%9D%98-date-type-record-%EB%B9%84%EA%B5%90%ED%95%98%EA%B8%B0
+--part of my uni SQL assignment(PostgreSQL), declaring a function using "cursor"
+
+create function date_lookup(_day date) returns int
+as
+$$
+declare
+	curr record;
+    prev record;
+    d_cursor cursor for select * from season;
+begin
+	open d_cursor;
+    fetch d_cursor into curr;
+    curr.star_date = curr.start_date -7;
+    prev = curr;  --loop으로 curr 데이터가 변형되기 전에 prev에 저장
+
+	loop
+		fetch d_cursor into curr;
+    	exit when not found; --postgresqltutorial 커서 소개글 참고
+    	if curr.start_date - prev.ending <= 7 then
+    		curr.start_date = prev.ending +1; --이전 학기 종료일과 현재 학기 시작일이 7일도 차이가 나지 않을 때, 
+ 	   else
+    		curr.start_date = curr.start_dtae -7; --일반적으로 n학기의 공식 시작일 보다 1주일 전부터 n학기라고 지칭 
+    		prev.end_date = curr.start_date -1; --일반적으로는 n학기의 공식 시작일의 1주일전까지가 이전학기(n-1학기)라고 인식
+    	end if;
+    	if prev.start_date <= _day and _day <= prev.ending then --검색한 날짜가 prev에 저장된 start, end 날짜 사이에 들어가는지 확인 후, 맞다면 해당 행의 값 리턴
+    		close d_cursor;
+        	return prev.id;
+    	end if;
+   		prev = curr; --다음 행으로 넘어가기 위해 record2가 record1이 됨
+	end loop;
+end;
+$$ language plpgsql
+;

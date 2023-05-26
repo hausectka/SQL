@@ -1,0 +1,14 @@
+--https://leetcode.com/problems/delete-duplicate-emails/description/
+--2 different versions
+
+--Ver. 1
+DELETE p1.* 
+FROM Person p1 JOIN Person p ON p1.email = p.email 
+WHERE p1.id > p.id
+;
+
+--Ver. 2 (using a subquery)
+DELETE FROM Person
+WHERE id NOT IN (
+    SELECT id FROM (SELECT email, MIN(id) AS id FROM Person GROUP BY email) AS p)
+;
